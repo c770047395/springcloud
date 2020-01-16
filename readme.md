@@ -84,3 +84,22 @@ public class DeptProvider_8001 {
     }
 }
 ```
+
+1.2Eureka集群的配置
+
+在配置Eureka服务器的时候，可以在defaultZone配置中加上多个地址，就可以实现集群
+
+```yaml
+server:
+  port: 7001
+#Eureka配置
+eureka:
+  instance:
+    hostname: eureka7001.com
+  client:
+    register-with-eureka: false #是否向eureka注册中心注册自己
+    fetch-registry: false #如果为false则表示自己为注册中心
+    service-url:
+#      单机：defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+      defaultZone: http://eureka7002.com:7002/eureka/,http://eureka7003.com:7003/eureka/
+```
