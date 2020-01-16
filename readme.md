@@ -85,7 +85,7 @@ public class DeptProvider_8001 {
 }
 ```
 
-1.2Eureka集群的配置
+### 1.2Eureka集群的配置
 
 在配置Eureka服务器的时候，可以在defaultZone配置中加上多个地址，就可以实现集群
 
