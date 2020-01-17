@@ -167,3 +167,35 @@ public RestTemplate getRestTemplate(){
     //通过Ribbon实现，地址应该是变量，通过服务访问
     private static final String REST_URL_PREFIX="http://SPRINGCLOUD-PROVIDER-DEPT";
 ```
+
+### 2.2 自定义Ribbon的负载均衡模式
+Ribbon中有一个IRule接口定义了如何实现负载均衡，默认是轮询模式，
+
+除了Ribbon中已经定义的策略之外，我们还可以自定义策略（注意，自定义策略时，
+不能被ComponentScan注解扫描，否则IRule会变成全局的）
+
+1.在主启动类上加上RibbonClient注解
+```java
+@SpringBootApplication
+@EnableEurekaClient
+//在微服务启动的时候就能加载自定义的ribbon类
+@RibbonClient(name="SPRINGCLOUD-PROVIDER-DEPT",configuration = CpRule.class)
+public class DeptConsumer_80 {
+    public static void main(String[] args) {
+        SpringApplication.run(DeptConsumer_80.class,args);
+    }
+```
+2.编写IRule类（要在ComponentScan之外）
+```java
+@Configuration
+public class CpRule  {
+
+    @Bean
+    public IRule myRule(){
+        return new CpRandomRule();
+    }
+}
+```
+注：这里的IRule可以使用Ribbon自带的策略如RandomRule，RoundRule等，也可以自定义
+
+3.自定义注解（见CpRandomRule类）
