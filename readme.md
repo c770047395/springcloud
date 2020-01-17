@@ -103,3 +103,67 @@ eureka:
 #      单机：defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
       defaultZone: http://eureka7002.com:7002/eureka/,http://eureka7003.com:7003/eureka/
 ```
+
+## 2.Ribbon
+
+Ribbon在Springcloud中起到负载均衡的作用，实现了客户端的负载均衡，
+是由客户端向Eureka注册中心先获取可用的服务列表再进行的负载均衡，
+与Nginx服务端的反向代理不同
+
+### 2.1 Ribbon的配置
+
+首先同样是在*客户端*导入依赖
+```xml
+<!--Ribbon-->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-ribbon</artifactId>
+    <version>1.4.7.RELEASE</version>
+</dependency>
+<!--Eureka-->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-eureka</artifactId>
+    <version>1.4.7.RELEASE</version>
+</dependency>
+```
+此时由于客户端中加入了Eureka，需要在启动类上配置
+```java
+@SpringBootApplication
+@EnableEurekaClient
+public class DeptConsumer_80 {
+    public static void main(String[] args) {
+        SpringApplication.run(DeptConsumer_80.class,args);
+    }
+}
+
+```
+然后向配置文件中添加注册中心
+```yaml
+#Eureka配置
+eureka:
+  client:
+    register-with-eureka: false #不向Eureka中注册自己
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka/,http://eureka7002.com:7002/eureka/,http://eureka7003.com:7003/eureka/
+```
+
+修改RestTemplate的注入方式
+```java
+//配置负载均衡实现RestTemplate
+@Bean
+@LoadBalanced  //Ribbon
+public RestTemplate getRestTemplate(){
+    return new RestTemplate();
+}
+```
+
+修改Controller中的服务提供者前缀变成Eureka注册中心所提供的服务地址
+```java
+    @Autowired
+    private RestTemplate restTemplate; //提供多种便捷访问http服务的方法，简单的restful服务模板
+
+    //private static final String REST_URL_PREFIX="http://localhost:8001";
+    //通过Ribbon实现，地址应该是变量，通过服务访问
+    private static final String REST_URL_PREFIX="http://SPRINGCLOUD-PROVIDER-DEPT";
+```
