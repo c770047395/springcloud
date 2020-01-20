@@ -334,3 +334,54 @@ public class HystrixDeptProvider_8001 {
     }
 }
 ```
+
+### 4.2 服务降级
+
+服务降级与服务熔断不同，服务降级是整体的概念，是在客户端方面定义降级规则
+，一个服务被关闭之后，用户再访问的时候则返回降级后（默认）的信息，
+而不会直接报错，与直接关闭不同，好歹能用
+
+1.编写降级工厂
+```java
+//降级
+@Component
+public class DeptClientServiceFallbackFactory implements FallbackFactory {
+
+    @Override
+    public DeptClientService create(Throwable throwable) {
+        return new DeptClientService() {
+            @Override
+            public Dept queryById(Long id) {
+                return new Dept()
+                        .setDeptno(id)
+                        .setDname("id=》"+id+"没有对应的信息，服务已被降级关闭")
+                        .setDb_source("没有数据");
+            }
+
+            @Override
+            public List<Dept> queryAll() {
+                return null;
+            }
+
+            @Override
+            public boolean addDept(Dept dept) {
+                return false;
+            }
+
+            @Override
+            public Object dis() {
+                return null;
+            }
+        };
+    }
+}
+
+```
+
+2.在FeignClient注解上加入fallbackFactory并指定类
+
+```java
+@FeignClient(value = "SPRINGCLOUD-PROVIDER-DEPT",fallbackFactory = DeptClientServiceFallbackFactory.class)
+```
+
+3.当服务被关闭时，则会返回降级提示（默认值）。
