@@ -385,3 +385,89 @@ public class DeptClientServiceFallbackFactory implements FallbackFactory {
 ```
 
 3.当服务被关闭时，则会返回降级提示（默认值）。
+
+
+### 4.3 Hystrix Dashboard的配置
+
+1.配置监控面板
+添加依赖
+```xml
+    <dependencies>
+        <!--hystrix依赖-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-hystrix</artifactId>
+            <version>1.4.7.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-hystrix-dashboard</artifactId>
+            <version>1.4.7.RELEASE</version>
+        </dependency>
+        <!--Ribbon-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-ribbon</artifactId>
+            <version>1.4.7.RELEASE</version>
+        </dependency>
+        <!--Eureka-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-eureka</artifactId>
+            <version>1.4.7.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>com.cp</groupId>
+            <artifactId>springcloud-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+        </dependency>
+    </dependencies>
+```
+主启动类开启dashboard
+```java
+@SpringBootApplication
+@EnableHystrixDashboard //开启Dashboard
+public class DeptConsumerDashboard_9001 {
+    public static void main(String[] args) {
+        SpringApplication.run(DeptConsumerDashboard_9001.class,args);
+    }
+}
+```
+
+2.开启服务监控
+
+添加 监控依赖
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+添加servlet
+```java
+@SpringBootApplication
+@EnableEurekaClient
+@EnableDiscoveryClient
+//添加熔断支持
+@EnableCircuitBreaker
+public class HystrixDeptProvider_8001 {
+    public static void main(String[] args) {
+        SpringApplication.run(HystrixDeptProvider_8001.class,args);
+    }
+    @Bean
+    public ServletRegistrationBean hystrixMetricsStreamServlet(){
+        ServletRegistrationBean registrationBean = new ServletRegistrationBean(new HystrixMetricsStreamServlet());
+        registrationBean.addUrlMappings("/actuator/hystrix.stream");
+        return registrationBean;
+    }
+}
+```
