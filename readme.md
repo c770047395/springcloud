@@ -279,3 +279,58 @@ public class FeignDeptConsumer_80 {
 }
 
 ```
+
+
+## 4.hystrix
+对于微服务来说，服务之间存在调用链，当这条链上一个服务崩了的时候，
+在高并发情况下，可能导致服务器瞬间达到饱和状态，无法接受新的请求，
+这是我们不能容忍的，所以在一个微服务出现故障的时候，我们需要一个容灾机制，
+hystrix有效的帮我们解决了这个问题
+
+## 4.1 服务熔断
+由于用户请求失误（如请求id为10的用户，但是系统中无此用户）时，调用
+另外一个方法返回给用户错误的结果而不直接抛出异常。
+
+1.添加hystrix依赖
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-hystrix</artifactId>
+    <version>1.4.7.RELEASE</version>
+</dependency>
+```
+
+2.为需要熔断的服务加上@HystrixCommand注解并设置备选方案
+```java
+@RequestMapping("/dept/get/{id}")
+@HystrixCommand(fallbackMethod = "hystrixGet")
+public Dept get(@PathVariable("id") Long id){
+    Dept dept = deptService.queryById(id);
+    if (dept == null){
+        throw new RuntimeException("id=》"+id+"，不存在该用户或者信息无法找到");
+    }
+    return dept;
+}
+
+//备选方案
+public Dept hystrixGet(@PathVariable("id") Long id){
+    return new Dept()
+            .setDeptno(id)
+            .setDname("id=》"+id+"，没有对应的信息，null--@hystrix")
+            .setDb_source("没有数据库信息");
+}
+```
+
+3.在主启动类上开启熔断支持
+```java
+@SpringBootApplication
+@EnableEurekaClient
+@EnableDiscoveryClient
+//添加熔断支持
+@EnableCircuitBreaker
+public class HystrixDeptProvider_8001 {
+    public static void main(String[] args) {
+        SpringApplication.run(HystrixDeptProvider_8001.class,args);
+    }
+}
+```
