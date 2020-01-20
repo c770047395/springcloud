@@ -199,3 +199,83 @@ public class CpRule  {
 注：这里的IRule可以使用Ribbon自带的策略如RandomRule，RoundRule等，也可以自定义
 
 3.自定义注解（见CpRandomRule类）
+
+
+## 3.Feign
+Feign对Ribbon进行了封装，以接口注入的形式提供给Controller调用。
+
+1.引入Feign依赖
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-feign</artifactId>
+    <version>1.4.7.RELEASE</version>
+</dependency>
+```
+
+2.编写接口
+
+```java
+@FeignClient(value = "SPRINGCLOUD-PROVIDER-DEPT")
+public interface DeptClientService {
+    @GetMapping("/dept/get/{id}")
+    public Dept queryById(@PathVariable("id") Long id);
+
+    @GetMapping("/dept/list")
+    public List<Dept> queryAll();
+
+    @GetMapping("/dept/add")
+    public boolean addDept(Dept dept);
+
+    @GetMapping("/dept/discovery")
+    public Object dis();
+}
+```
+注：其中@FeignClient注解通过value值去Eureka注册中心中获取对应的服务，也可实现负载均衡
+
+3.在消费者控制器中注入，并通过接口调用
+
+```java
+@RestController
+public class DeptConsumerController {
+
+    @Autowired
+    private DeptClientService service;
+
+    @RequestMapping("consumer/dept/get/{id}")
+    public Dept get(@PathVariable("id") Long id){
+        return this.service.queryById(id);
+    }
+
+    @RequestMapping("consumer/dept/add")
+    public boolean add(Dept dept){
+        System.out.println(dept);
+        return this.service.addDept(dept);
+    }
+
+    @RequestMapping("consumer/dept/list")
+    public List<Dept> list(){
+        return this.service.queryAll();
+    }
+
+    @RequestMapping("/dept/discovery")
+    public Object discovery(){
+        return this.service.dis();
+    }
+}
+```
+
+4.主启动类中设置Feign的扫描包
+
+```java
+@SpringBootApplication
+@EnableEurekaClient
+@EnableFeignClients(basePackages = {"com.cp.springcloud"})
+public class FeignDeptConsumer_80 {
+    public static void main(String[] args) {
+        SpringApplication.run(FeignDeptConsumer_80.class,args);
+    }
+}
+
+```
