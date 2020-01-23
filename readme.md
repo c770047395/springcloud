@@ -471,3 +471,56 @@ public class HystrixDeptProvider_8001 {
     }
 }
 ```
+
+## 5.Zuul
+Zuul是一个路由网关，可以通过Zuul对Eureka中已经注册的微服务进行访问
+，拦截，过滤等等
+
+1.添加依赖
+```xml
+<!--Zuul依赖-->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-zuul</artifactId>
+    <version>1.4.7.RELEASE</version>
+</dependency>
+```
+
+2.编写配置文件
+```yaml
+server:
+  port: 9527
+spring:
+  application:
+    name: springcloud-zuul
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka/,http://eureka7002.com:7002/eureka/,http://eureka7003.com:7003/eureka/
+  instance:
+    instance-id: zuul9527.com
+    prefer-ip-address: true
+
+info:
+  app.name: cp-springcloud
+  company.name: cp.com
+zuul:
+  routes:
+    mydept.serviceId: springcloud-provider-dept
+    mydept.path: /mydept/**
+#  ignored-services: springcloud-provider-dept #不能使用这个路径访问了
+  ignored-services: "*" #隐藏全部
+  prefix: /cp #前缀
+```
+
+3.编写启动类
+```java
+@SpringBootApplication
+@EnableZuulProxy
+public class ZuulApplication_9527 {
+    public static void main(String[] args) {
+        SpringApplication.run(ZuulApplication_9527.class,args);
+    }
+}
+```
+
